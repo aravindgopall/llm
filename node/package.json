@@ -1,0 +1,12 @@
+{
+  "name": "llm-node",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "napi build --cargo-cwd ../rust --features node-bindings",
+    "test": "node test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@napi-rs/cli": "^2.16.0"
+  }
+}

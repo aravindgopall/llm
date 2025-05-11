@@ -1,0 +1,31 @@
+[package]
+name = "llm"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs" 
+
+[lib]
+name = "llm"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+reqwest = { version = "0.11",  default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+dotenv = "0.15"
+env = "1.0.1"
+pyo3 = { version = "0.24.2", features = ["extension-module"] }
+napi = { version = "2", optional = true, features = ["tokio_rt"] }
+napi-derive = { version = "2", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[build-dependencies]
+napi-build = "2.1.6"
+
+[features]
+default = []
+python-bindings = ["pyo3/extension-module"]
+node-bindings = ["napi", "napi-derive"]
