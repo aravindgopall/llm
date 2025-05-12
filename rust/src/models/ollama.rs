@@ -1,4 +1,4 @@
-use crate::models::model::LLMProvider;
+use crate::models::model::{LLMProvider, Message, flatten_messages};
 use serde::{Deserialize, Serialize};
 
 pub struct OllamaProvider {
@@ -18,14 +18,15 @@ struct OllamaResponse {
 
 #[async_trait::async_trait]
 impl LLMProvider for OllamaProvider {
-    async fn generate(
+    async fn chat(
         &self,
-        prompt: &str,
+        messages: &[Message],
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let prompt = flatten_messages(messages);
         let client = reqwest::Client::new();
         let body = OllamaRequest {
             model: &self.model,
-            prompt,
+            prompt: &prompt,
         };
 
         let res = client

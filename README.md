@@ -166,3 +166,11 @@ npm publish
 - Clean, optional bindings with `--features`
 - Async-ready for both Python and Node
 - Minimal duplication across languages
+
+---
+
+## Build issues
+
+if libiconv linking fails:
+
+> brew install libiconv

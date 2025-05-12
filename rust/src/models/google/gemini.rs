@@ -1,6 +1,5 @@
+use crate::models::model::{LLMProvider, Message, flatten_messages};
 use serde::{Deserialize, Serialize};
-
-use crate::models::model::LLMProvider;
 
 pub struct GeminiProvider {
     pub api_key: String,
@@ -43,14 +42,15 @@ struct GeminiPartResp {
 
 #[async_trait::async_trait]
 impl LLMProvider for GeminiProvider {
-    async fn generate(
+    async fn chat(
         &self,
-        prompt: &str,
+        messages: &[Message],
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let prompt = flatten_messages(messages);
         let client = reqwest::Client::new();
         let body = GeminiRequest {
             contents: vec![GeminiMessage {
-                parts: vec![GeminiPart { text: prompt }],
+                parts: vec![GeminiPart { text: &prompt }],
             }],
         };
 

@@ -1,4 +1,5 @@
-use crate::models::model::LLMProvider;
+use crate::models::model::{LLMProvider, Message};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 pub struct OpenAIProvider {
@@ -6,45 +7,49 @@ pub struct OpenAIProvider {
 }
 
 #[derive(Serialize)]
-pub struct OpenAIRequest<'a> {
-    pub model: &'a str,
-    pub messages: Vec<Message<'a>>,
+struct OpenAIRequest<'a> {
+    model: &'a str,
+    messages: Vec<OpenAIMessage<'a>>,
 }
 
 #[derive(Serialize)]
-pub struct Message<'a> {
-    pub role: &'a str,
-    pub content: &'a str,
+struct OpenAIMessage<'a> {
+    role: &'a str,
+    content: &'a str,
 }
 
 #[derive(Deserialize)]
-pub struct OpenAIResponse {
-    pub choices: Vec<Choice>,
+struct OpenAIResponse {
+    choices: Vec<Choice>,
 }
 
 #[derive(Deserialize)]
-pub struct Choice {
-    pub message: MessageResp,
+struct Choice {
+    message: AssistantMessage,
 }
 
 #[derive(Deserialize)]
-pub struct MessageResp {
-    pub content: String,
+struct AssistantMessage {
+    content: String,
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl LLMProvider for OpenAIProvider {
-    async fn generate(
+    async fn chat(
         &self,
-        prompt: &str,
+        messages: &[Message],
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
+
         let body = OpenAIRequest {
             model: "gpt-4",
-            messages: vec![Message {
-                role: "user",
-                content: prompt,
-            }],
+            messages: messages
+                .iter()
+                .map(|m| OpenAIMessage {
+                    role: m.role.as_str(),
+                    content: &m.content,
+                })
+                .collect(),
         };
 
         let res = client
@@ -61,7 +66,8 @@ impl LLMProvider for OpenAIProvider {
             .map(|c| c.message.content.clone())
             .unwrap_or_default())
     }
+
     fn name(&self) -> String {
-        "openai".to_string()
+        "openai".into()
     }
 }

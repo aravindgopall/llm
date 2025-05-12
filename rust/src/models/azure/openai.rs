@@ -1,5 +1,6 @@
-use crate::models::model::LLMProvider;
-use crate::models::openai::{Message, OpenAIRequest, OpenAIResponse};
+use crate::models::model::{LLMProvider, Message};
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
 pub struct AzureOpenAIProvider {
     pub api_key: String,
@@ -7,34 +8,63 @@ pub struct AzureOpenAIProvider {
     pub deployment_id: String,
 }
 
-#[async_trait::async_trait]
+#[derive(Serialize)]
+struct AzureRequest<'a> {
+    messages: Vec<AzureMessage<'a>>,
+}
+
+#[derive(Serialize)]
+struct AzureMessage<'a> {
+    role: &'a str,
+    content: &'a str,
+}
+
+#[derive(Deserialize)]
+struct AzureResponse {
+    choices: Vec<Choice>,
+}
+
+#[derive(Deserialize)]
+struct Choice {
+    message: AssistantMessage,
+}
+
+#[derive(Deserialize)]
+struct AssistantMessage {
+    content: String,
+}
+
+#[async_trait]
 impl LLMProvider for AzureOpenAIProvider {
-    async fn generate(
+    async fn chat(
         &self,
-        prompt: &str,
+        messages: &[Message],
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let client = reqwest::Client::new();
+
+        let azure_messages = messages
+            .iter()
+            .map(|m| AzureMessage {
+                role: m.role.as_str(),
+                content: &m.content,
+            })
+            .collect();
+
         let url = format!(
             "{}/openai/deployments/{}/chat/completions?api-version=2023-03-15-preview",
             self.endpoint, self.deployment_id
         );
 
-        let client = reqwest::Client::new();
-        let body = OpenAIRequest {
-            model: "gpt-4", // model field may be ignored by Azure
-            messages: vec![Message {
-                role: "user",
-                content: prompt,
-            }],
-        };
-
         let res = client
             .post(&url)
             .header("api-key", &self.api_key)
-            .json(&body)
+            .json(&AzureRequest {
+                messages: azure_messages,
+            })
             .send()
             .await?;
 
-        let parsed: OpenAIResponse = res.json().await?;
+        let parsed: AzureResponse = res.json().await?;
         Ok(parsed
             .choices
             .get(0)
@@ -43,6 +73,6 @@ impl LLMProvider for AzureOpenAIProvider {
     }
 
     fn name(&self) -> String {
-        "azure_openai".to_string()
+        "azure-openai".into()
     }
 }

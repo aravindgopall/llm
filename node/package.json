@@ -5,8 +5,8 @@
     "build": "napi build --cargo-cwd ../rust --features node-bindings",
     "test": "node test.js"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@napi-rs/cli": "^2.16.0"
+    "@napi-rs/cli": "^2.16.0",
+    "@types/node": "^22.15.17"
   }
 }
